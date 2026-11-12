@@ -308,6 +308,21 @@ textarea.field{height:auto;min-height:64px;padding:10px 12px;resize:vertical}
 .setsec:first-of-type{border-top:0;padding-top:0}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap}
 
+/* bills */
+.chk{width:44px;height:44px;flex:none;display:grid;place-items:center;margin:-6px 0 -6px -10px;border-radius:50%}
+.chk span{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink3);display:grid;place-items:center}
+.chk.on span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chk svg.i{width:15px;height:15px;stroke-width:3}
+.bill .t,.bill .s,.row .s.wrap{white-space:normal;overflow:visible}
+.bill .end{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.bill.paid .t{color:var(--ink3);text-decoration:line-through}
+.bill.paid .amt{color:var(--ink3);font-weight:700}
+.amt.link{color:var(--s1)}
+.badge{min-width:18px;height:18px;border-radius:9px;background:var(--over);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;padding:0 5px;font-style:normal}
+.tab{position:relative}
+.tab .badge{position:absolute;top:0;left:50%;margin-left:6px}
+.navi .badge{margin-left:auto}
+
 /* toast */
 .toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;z-index:60;background:var(--ink);color:var(--bg);padding:10px 12px 10px 16px;border-radius:14px;display:flex;gap:14px;align-items:center;font-weight:600;font-size:14px;transition:.25s;pointer-events:none;max-width:calc(100vw - 32px)}
 .toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
@@ -396,6 +411,7 @@ const P={
   tools:'<path d="M14.5 6.5a4 4 0 0 0 5 5L12 19a2.1 2.1 0 0 1-3-3l7.5-7.5a4 4 0 0 1-2-2z"/>',
   star:'<path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z"/>',
   up:'<path d="m6 15 6-6 6 6"/>', down:'<path d="m6 9 6 6 6-6"/>',
+  dues:'<rect x="3" y="5.5" width="18" height="13" rx="3"/><path d="M3 10h18M7 15h3"/>',
   repeat:'<path d="M17 2.5 20.5 6 17 9.5"/><path d="M3.5 11.5V10a4 4 0 0 1 4-4h13M7 21.5 3.5 18 7 14.5"/><path d="M20.5 12.5V14a4 4 0 0 1-4 4h-13"/>',
 };
 // a category id draws that category's chosen icon
@@ -441,11 +457,11 @@ const FREQL={monthly:'Monthly',quarterly:'Every 3 months',halfyearly:'Every 6 mo
 
 /* ============ state ============ */
 const LKEY='kharcha.v1';
-const blank=()=>({v:1,settings:{income:100000,saving:0,mode:'fixed',subs:{}},incomes:{},savings:{},fixed:[],planned:[],goals:[],sample:false,setup:false});
+const blank=()=>({v:1,settings:{income:100000,saving:0,mode:'fixed',subs:{}},incomes:{},savings:{},fixed:[],planned:[],goals:[],cards:[],billPaid:{},sample:false,setup:false});
 let S=Object.assign(blank(),{expenses:[]});
 refreshCats();
-const UI={view:'today',rep:{period:'month',anchor:today(),scope:'daily',open:null,hover:null},hist:{mk:mkOf(today()),cat:'all'},plan:{mk:mkOf(today())}};
-const STATE_KEYS=['v','settings','incomes','savings','fixed','planned','goals','sample','setup'];
+const UI={view:'today',rep:{period:'month',anchor:today(),scope:'daily',open:null,hover:null},hist:{mk:mkOf(today()),cat:'all'},plan:{mk:mkOf(today())},dues:{mk:mkOf(today())}};
+const STATE_KEYS=['v','settings','incomes','savings','fixed','planned','goals','cards','billPaid','sample','setup'];
 const stateOnly=()=>Object.fromEntries(STATE_KEYS.map(k=>[k,S[k]]));
 
 const STORE={mode:'local',user:null,F:null,A:null,db:null,auth:null,ready:false,timer:null};
@@ -558,18 +574,26 @@ function sampleData(){
     {id:'g1',name:'Emergency fund',target:600000,saved:240000,by:`${y+1}-12`,monthly:15000,rate:6},
     {id:'g2',name:'Family trip abroad',target:400000,saved:60000,by:`${y+2}-05`,monthly:8000,rate:7},
   ];
+  d.settings.billsFrom=addDays(t,-45);
+  d.cards=[
+    {id:'c1',name:'HDFC Regalia',bank:'HDFC Bank',last4:'1234',network:'Visa',limit:300000,stmtDay:20,dueDay:8,autopay:false,fee:2500,feeMonth:`${y}-03`,waive:300000,fx:3.5,rate:3.6,rewards:'Points on every ₹150 spent',lounge:'12 visits a year',notes:'',active:true,since:addDays(t,-80)},
+    {id:'c2',name:'SBI Cashback',bank:'SBI Card',last4:'5678',network:'Mastercard',limit:150000,stmtDay:5,dueDay:25,autopay:false,fee:999,feeMonth:`${y}-08`,waive:200000,fx:3.5,rate:3.75,rewards:'5% cashback on online spends',lounge:'',notes:'Fuel surcharge waiver',active:true,since:addDays(t,-80)},
+    {id:'c3',name:'Amazon Pay ICICI',bank:'ICICI Bank',last4:'9012',network:'Visa',limit:200000,stmtDay:8,dueDay:28,autopay:true,fee:0,feeMonth:'',waive:0,fx:3.5,rate:3.5,rewards:'Cashback on Amazon',lounge:'',notes:'Lifetime free',active:true,since:addDays(t,-80)},
+  ];
   return Object.assign(d,{expenses:ex});
 }
 function isDueStatic(f,mk){const m=+mk.slice(5);const k=FREQ[f.freq||'monthly'];return (((m-(f.startMonth||1))%k)+k)%k===0}
 
 /* ============ shell ============ */
-const TABS=[['today','Today'],['history','History'],['reports','Reports'],['plan','Plan'],['goals','Goals']];
+const TABS=[['today','Today'],['history','History'],['reports','Reports'],['plan','Plan'],['goals','Goals'],['dues','Bills']];
 function shell(){
-  const nav=TABS.map(([id,l])=>`<button class="tab" data-act="nav" data-v="${id}" ${UI.view===id?'aria-current="page"':''}>${I(id)}<span>${l}</span></button>`).join('');
+  let nDue=0;try{nDue=dueNow().length}catch(e){}
+  const bdg=id=>id==='dues'&&nDue?`<i class="badge" aria-label="${nDue} due">${nDue}</i>`:'';
+  const nav=TABS.map(([id,l])=>`<button class="tab" data-act="nav" data-v="${id}" ${UI.view===id?'aria-current="page"':''}>${I(id)}<span>${l}</span>${bdg(id)}</button>`).join('');
   $('#tabbar').innerHTML=nav;
   const who=STORE.mode==='cloud'&&STORE.user?esc(STORE.user.email||'Signed in'):'Saved on this device';
   $('#side').innerHTML=`<div class="brand"><span class="mark">₹</span>Kharcha</div>
-   ${TABS.map(([id,l])=>`<button class="navi" data-act="nav" data-v="${id}" ${UI.view===id?'aria-current="page"':''}>${I(id)}<span>${l}</span></button>`).join('')}
+   ${TABS.map(([id,l])=>`<button class="navi" data-act="nav" data-v="${id}" ${UI.view===id?'aria-current="page"':''}>${I(id)}<span>${l}</span>${bdg(id)}</button>`).join('')}
    <div class="spacer"></div>
    <button class="navi" data-act="settings">${I('gear')}<span>Settings</span></button>
    <div class="acct">${who}</div>`;
@@ -584,7 +608,7 @@ function render(){
   document.getElementById('app').hidden=false;$('#tabbar').hidden=false;$('#fab').hidden=false;const gt=$('#gate');if(gt)gt.remove();
   shell();
   const v=$('#view');
-  ({today:vToday,history:vHistory,reports:vReports,plan:vPlan,goals:vGoals}[UI.view]||vToday)(v);
+  ({today:vToday,history:vHistory,reports:vReports,plan:vPlan,goals:vGoals,dues:vDues}[UI.view]||vToday)(v);
 }
 
 /* ============ TODAY ============ */
@@ -637,6 +661,7 @@ function vToday(v){
   v.innerHTML=`${head(`${WD[now.getDay()]}, ${now.getDate()} ${MONTH[now.getMonth()]}`,'Today')}
   ${sampleBanner()}
   <div class="grid2"><div class="col">
+    ${dueSection()}
     <section class="card">
       <div class="hero">
         <div class="ring">${ring(spent,allow)}<div class="center"><div class="big num ${left<0?'over':''}">${inr(Math.abs(left))}</div><div class="cap">${left<0?'over today’s budget':'left to spend today'}</div></div></div>
@@ -1074,6 +1099,7 @@ let syncing=false;
 async function autoSync(){
   if(syncing||(STORE.mode==='cloud'&&!STORE.ready))return;
   if(!S.settings.autoFrom){const ms=S.expenses.filter(e=>!e.fixed).map(e=>mkOf(e.date)).sort();S.settings.autoFrom=ms[0]||mkOf(today());persist(true)}
+  if(!S.settings.billsFrom){S.settings.billsFrom=today();persist(true)}
   const{add,link}=syncPlan();
   if(!add.length&&!link.length){if(S.settings.autoV!==2){S.settings.autoV=2;persist(true)}return}
   if(S.settings.autoV!==2&&!S.sample){if(!sheetEl)reviewSync(add,link);return}
@@ -1096,6 +1122,202 @@ function reviewSync(add,link){
     syncing=true;let n=0;try{n=await applySync([...A2,...extra],L2)}finally{syncing=false}
     render();toast(n?`Done. ${n} ${n===1?'entry':'entries'} updated`:'Done');
   };
+}
+
+/* ============ bills & cards: payment checklist ============ */
+// cards: [{id,name,bank,last4,network,limit,stmtDay,dueDay,autopay,fee,feeMonth,waive,fx,rate,rewards,lounge,notes,active,since}]
+// billPaid: {key:{amt?,min?,on?}}  key = cc_<cardId>_<statementMonth> or fx_<fixedId>_<month>; "on" = date paid
+const cardsList=()=>S.cards||[];
+const paidMap=()=>S.billPaid||(S.billPaid={});
+const billsFrom=()=>S.settings.billsFrom||today();
+const billLead=()=>S.settings.billLead??5;
+const cardLabel=c=>c.name+(c.last4?` ••${c.last4}`:'');
+const dayDiff=(a,b=today())=>Math.round((parseD(a)-parseD(b))/864e5);
+// one statement cycle: statement on stmtDay, payment due on the next dueDay after it
+function cardCycle(c,sm){const sd=Math.min(+c.stmtDay||1,dim(sm));const dm=(+c.dueDay>+c.stmtDay)?sm:addMonths(sm,1);
+  return{stmt:`${sm}-${pad(sd)}`,due:`${dm}-${pad(Math.min(+c.dueDay||1,dim(dm)))}`,dueMk:dm,key:`cc_${c.id}_${sm}`}}
+// everything that falls due in month mk: one bill per card + recurring fixed costs from Plan
+function billItems(mk){
+  const out=[],pm=paidMap();
+  for(const c of cardsList()){if(c.active===false)continue;
+    const sm=(+c.dueDay>+c.stmtDay)?mk:addMonths(mk,-1);const cy=cardCycle(c,sm);const e=pm[cy.key]||{};
+    if(c.since&&cy.due<c.since&&!e.on&&!e.amt)continue;
+    out.push({key:cy.key,kind:'card',card:c,name:cardLabel(c),stmt:cy.stmt,due:cy.due,amount:e.amt||0,min:e.min||0,on:e.on||''})}
+  for(const f of S.fixed){if(f.active===false)continue;
+    for(const o of occ('fixed',f,`${mk}-31`)){if(o.mk!==mk||skipped(o))continue;
+      out.push({key:o.key,kind:'fixed',name:f.name,due:o.date,amount:o.amount,on:(pm[o.key]||{}).on||'',src:f,k:o.k,tot:occTotal('fixed',f)})}}
+  return out.sort((a,b)=>a.due.localeCompare(b.due)||a.name.localeCompare(b.name));
+}
+function billByKey(k){
+  const i=k.lastIndexOf('_'),m=k.slice(i+1),id=k.slice(k.indexOf('_')+1,i);
+  let dueMk=m;if(k.startsWith('cc_')){const c=cardsList().find(x=>x.id===id);if(c)dueMk=cardCycle(c,m).dueMk}
+  return billItems(dueMk).find(x=>x.key===k)||null;
+}
+// unpaid bills to show now: cards from their statement date, recurring costs a few days before the due date
+function dueNow(){
+  const t=today(),fl=billsFrom(),lead=billLead(),out=[];
+  for(let m=mkOf(fl);m<=addMonths(mkOf(t),1);m=addMonths(m,1))
+    for(const it of billItems(m)){
+      if(it.on||it.due<fl)continue;
+      const show=it.kind==='card'?it.stmt<=t:addDays(it.due,-lead)<=t;
+      if(show)out.push(it);
+    }
+  return out.sort((a,b)=>a.due.localeCompare(b.due));
+}
+function dueChip(due){const n=dayDiff(due);
+  return n<0?`<span class="chip over">Overdue ${-n} day${n===-1?'':'s'}</span>`:n===0?'<span class="chip warn">Due today</span>':n===1?'<span class="chip warn">Tomorrow</span>':`<span class="chip mute">In ${n} days</span>`}
+function billRow(it,mode){
+  const paid=!!it.on,fl=billsFrom();
+  let meta=it.kind==='card'?`Statement ${dLabel(it.stmt)} · due ${dLabel(it.due)}`:`${mode==='due'?'Fixed cost · ':''}Due ${dLabel(it.due)}`;
+  if(it.kind==='fixed'&&it.tot)meta+=` · ${it.k+1} of ${it.tot}`;
+  if(paid)meta+=` · paid ${dLabel(it.on)}`;
+  const noAmt=it.kind==='card'&&!(it.amount>0);
+  const amt=noAmt?'Add amount':inr(it.amount);
+  const chip=paid?'':it.due<fl?'<span class="chip mute">Before start</span>':dueChip(it.due);
+  return `<div class="row bill ${paid?'paid':''}"><button class="chk ${paid?'on':''}" data-act="billTick" data-k="${it.key}" aria-label="${paid?'Mark '+esc(it.name)+' as not paid':'Mark '+esc(it.name)+' as paid'}"><span>${paid?I('check'):''}</span></button>
+    <button class="rowbtn" data-act="billOpen" data-k="${it.key}"><span class="mid"><div class="t">${esc(it.name)}</div><div class="s">${esc(meta)}</div></span><span class="end"><span class="amt num ${noAmt&&!paid?'link':''}">${amt}</span>${chip}</span></button></div>`;
+}
+function dueSection(){
+  const items=dueNow();if(!items.length)return '';
+  const tot=items.reduce((a,i)=>a+(i.amount||0),0);
+  return `<section class="card"><div class="card-head"><div><h2>Payments due</h2><div class="sub">From your card statements and Plan</div></div><span class="chip warn num">${tot?inr(tot)+' · ':''}${items.length}</span></div>
+    <div class="list">${items.slice(0,5).map(i=>billRow(i,'due')).join('')}</div>
+    ${items.length>5?`<div class="sub" style="padding-top:6px">+ ${items.length-5} more in Bills</div>`:''}
+    <div class="hint" style="margin-top:8px">Tap the circle once you have paid. Tap a row to add the statement amount.</div>
+    <div class="btnrow" style="margin-top:10px"><button class="pillbtn ghost sm" data-act="nav" data-v="dues">Open Bills checklist</button></div></section>`;
+}
+function vDues(v){
+  const mk=UI.dues.mk,t=today(),fl=billsFrom();const items=billItems(mk);
+  const cc=items.filter(i=>i.kind==='card'),rec=items.filter(i=>i.kind==='fixed');
+  const tracked=items.filter(i=>i.on||i.due>=fl);const paid=tracked.filter(i=>i.on).length;
+  const pend=tracked.filter(i=>!i.on);const owe=pend.reduce((a,i)=>a+(i.amount||0),0);
+  const unk=pend.filter(i=>!(i.amount>0)).length;const over=pend.filter(i=>i.due<t).length;
+  const pct=tracked.length?paid/tracked.length*100:0;
+  v.innerHTML=`${head('Payment checklist','Bills')}
+  ${sampleBanner()}
+  <div class="toolbar"><div class="stepper"><button data-act="duesMonth" data-d="-1" aria-label="Previous month">${I('left')}</button><span class="lbl">${mkLabel(mk)}</span><button data-act="duesMonth" data-d="1" aria-label="Next month">${I('right')}</button></div></div>
+  <div class="grid2"><div class="col">
+    <section class="card">
+      <div class="card-head"><div><h2>This month</h2><div class="sub">By the month each payment is due</div></div>${over?`<span class="chip over">${over} overdue</span>`:tracked.length&&!pend.length?'<span class="chip good">All paid</span>':''}</div>
+      ${tracked.length?`<div class="meter" role="img" aria-label="${paid} of ${tracked.length} paid"><i style="width:${pct}%;background:var(--accent);border-radius:6px"></i></div>
+      <div class="kv"><span class="k">Paid</span><span class="v num">${paid} of ${tracked.length}</span></div>
+      <div class="kv"><span class="k">Still to pay</span><span class="v num">${inr(owe)}</span></div>
+      ${unk?`<div class="note">${unk} card statement${unk>1?'s have':' has'} no amount yet. Tap ${unk>1?'them':'it'} to add ${unk>1?'them':'it'}.</div>`:''}`
+      :'<div class="empty">Nothing is due in this month.</div>'}
+    </section>
+    <section class="card">
+      <div class="card-head"><div><h2>Credit cards</h2><div class="sub">Tick when the bill is paid</div></div>${cardsList().length?'':`<button class="pillbtn sm" data-act="addCard">${I('plus')} Add card</button>`}</div>
+      <div class="list">${cc.map(i=>billRow(i,'list')).join('')||`<div class="empty">${cardsList().length?'No card bill falls due this month.':'Add your cards once to track their statement and due dates.'}</div>`}</div>
+    </section>
+  </div><div class="col">
+    <section class="card">
+      <div class="card-head"><div><h2>Recurring payments</h2><div class="sub">From your fixed costs in Plan</div></div></div>
+      <div class="list">${rec.map(i=>billRow(i,'list')).join('')||'<div class="empty">No fixed costs fall due this month. Add EMIs, fees and bills in Plan.</div>'}</div>
+      ${S.fixed.some(f=>f.freq&&f.freq!=='monthly')?'<div class="note">Quarterly and yearly costs appear only in the months they fall due.</div>':''}
+    </section>
+    <section class="card">
+      <div class="card-head"><div><h2>My cards</h2><div class="sub">Set up once. Tap a card to see or edit its features.</div></div>${cardsList().length?`<button class="pillbtn sm" data-act="addCard">${I('plus')} Add</button>`:''}</div>
+      <div class="list">${cardsList().map(c=>`<button class="row" data-act="editCard" data-id="${c.id}"><span class="ic">${I('dues')}</span><span class="mid"><div class="t">${esc(cardLabel(c))}</div><div class="s wrap">${esc([c.network,c.limit?'limit '+inr(c.limit):'','statement '+ord(c.stmtDay)+', due '+ord(c.dueDay)].filter(Boolean).join(' · '))}</div></span></button>`).join('')||'<div class="empty">No cards yet.</div>'}</div>
+    </section>
+  </div></div>`;
+}
+function tickBill(k){
+  const it=billByKey(k);if(!it)return;const m=paidMap();const prev=m[k]?Object.assign({},m[k]):null;
+  const restore=()=>{const pm=paidMap();if(prev)pm[k]=prev;else delete pm[k];persist(true);render()};
+  if(it.on){const e=Object.assign({},m[k]);delete e.on;if(Object.keys(e).length)m[k]=e;else delete m[k];toast('Marked as not paid',restore)}
+  else{m[k]=Object.assign({},m[k]||{},{on:today()});toast(`${it.name} marked paid`,restore)}
+  persist(true);render();
+}
+let BL=null;
+function openBill(k){const it=billByKey(k);if(!it)return;BL={k,it,amt:it.amount&&it.kind==='card'?String(it.amount):'',min:it.min?String(it.min):'',on:it.on||today()};drawBill()}
+function drawBill(){
+  const it=BL.it,card=it.kind==='card';
+  const html=`${sTitle(esc(it.name))}
+  <div class="sub" style="margin:-6px 0 12px">${card?`Statement ${dLabel(it.stmt)} · due ${dLabel(it.due)}`:`Fixed cost · due ${dLabel(it.due)}`}</div>
+  <div class="form">
+    ${card?`<div class="two"><label for="bAmt">Statement amount (₹)<input class="field num" id="bAmt" inputmode="decimal" value="${esc(BL.amt)}" placeholder="18,420"></label>
+      <label for="bMin">Minimum due (₹)<input class="field num" id="bMin" inputmode="decimal" value="${esc(BL.min)}" placeholder="optional"></label></div>`
+      :`<div class="kv" style="border:0;padding:0"><span class="k">Amount</span><span class="v num">${inr(it.amount)}</span></div>`}
+    <label for="bOn">Paid on<input class="field" id="bOn" type="date" value="${esc(BL.on)}"></label>
+    <div class="note" style="margin:0"><div class="kv" style="border:0;padding:0 0 4px"><span class="k">Due date</span><span class="v">${dLabel(it.due)} ${it.due.slice(0,4)}</span></div>
+      <div class="kv" style="border:0;padding:0 0 6px"><span class="k">Status</span><span>${it.on?`<span class="chip good">Paid ${dLabel(it.on)}</span>`:dueChip(it.due)}</span></div>
+      ${card?`<div class="kv" style="border:0;padding:0"><span class="k">Autopay</span><span class="v">${it.card.autopay?'On':'Off'}</span></div>`:''}</div>
+    <div class="note" style="margin:0">${card?'<b>No expense is added.</b> Your card spends are already in your history. This only closes the reminder.':'<b>Already in your expenses.</b> Recurring costs are added on their due day. This only confirms you paid.'}</div>
+    <button class="save" data-act="billPay" style="margin-top:0">${it.on?'Save changes':'Mark as paid'}</button>
+    <div class="btnrow" style="justify-content:center">${card&&!it.on?'<button class="pillbtn ghost sm" data-act="billSaveAmt">Save amount only</button>':''}${it.on?'<button class="pillbtn ghost sm" data-act="billUnpay">Mark as not paid</button>':''}${card?`<button class="pillbtn ghost sm" data-act="editCard" data-id="${it.card.id}">Edit card details</button>`:''}</div>
+  </div>`;
+  if(sheetEl)setSheet(html);else openSheet(html);
+  const bind=(id,k)=>{const el=$('#'+id);if(el)el.addEventListener('input',()=>{BL[k]=el.value})};bind('bAmt','amt');bind('bMin','min');bind('bOn','on');
+}
+function saveBill(pay){
+  const it=BL.it;const m=paidMap();const e=Object.assign({},m[it.key]||{});
+  if(it.kind==='card'){const a=toNum(BL.amt),mn=toNum(BL.min);if(a>0)e.amt=a;else delete e.amt;if(mn>0)e.min=mn;else delete e.min}
+  if(pay){if(!/^\d{4}-\d\d-\d\d$/.test(BL.on||'')){toast('Pick the date you paid');return}e.on=BL.on}
+  if(Object.keys(e).length)m[it.key]=e;else delete m[it.key];
+  persist(true);closeSheet();render();toast(pay?'Marked as paid':'Amount saved');
+}
+function unpayBill(){const m=paidMap(),e=m[BL.it.key];if(e){delete e.on;if(!Object.keys(e).length)delete m[BL.it.key]}persist(true);closeSheet();render();toast('Marked as not paid')}
+
+/* ---- card set-up and features ---- */
+let CD=null;
+const NETS=['Visa','Mastercard','RuPay','Amex','Other'];
+function openCard(id){
+  const c=id?cardsList().find(x=>x.id===id):null;
+  CD=c?Object.assign({},c,{_new:false,limit:c.limit||'',fee:c.fee||'',waive:c.waive||'',fx:c.fx??'',rate:c.rate??'',stmtDay:String(c.stmtDay||''),dueDay:String(c.dueDay||''),feeMonth:c.feeMonth||''})
+    :{id:uid(),name:'',bank:'',last4:'',network:'Visa',limit:'',stmtDay:'',dueDay:'',autopay:false,fee:'',feeMonth:'',waive:'',fx:'',rate:'',rewards:'',lounge:'',notes:'',_new:true};
+  closeSheet(true);drawCard();
+}
+function cdPreview(){const s=Math.round(toNum(CD.stmtDay)),d=Math.round(toNum(CD.dueDay));
+  if(!(s>=1&&s<=31&&d>=1&&d<=31))return 'Enter both days to see how the cycle works.';
+  return `Statement on the ${ord(s)}, pay by the ${ord(d)}${d<=s?' of the next month':''}. The reminder starts on the statement date.`}
+function drawCard(){
+  const c=CD;const f=(id,k,label,extra='')=>`<label for="${id}">${label}<input class="field ${extra.includes('num')?'num':''}" id="${id}" data-cd="${k}" value="${esc(c[k])}" ${extra}></label>`;
+  const html=`${sTitle(c._new?'Add card':'Edit card')}
+  <div class="form">
+    <div class="label">Card</div>
+    ${f('cdName','name','Card name','placeholder="HDFC Regalia, Amazon Pay…" maxlength="40" autocomplete="off"')}
+    <div class="two">${f('cdBank','bank','Bank','maxlength="30" autocomplete="off"')}${f('cdL4','last4','Last 4 digits','num inputmode="numeric" maxlength="4" autocomplete="off" placeholder="1234"')}</div>
+    <div class="hscroll wrap">${NETS.map(n=>`<button class="fchip" data-act="cdNet" data-n="${n}" aria-pressed="${c.network===n}">${n}</button>`).join('')}</div>
+    ${f('cdLimit','limit','Credit limit (₹)','num inputmode="numeric" placeholder="1,50,000"')}
+    <div class="banner" style="margin:0"><span>Enter the <b>last 4 digits only</b>. Never type the full card number, expiry date or CVV.</span></div>
+    <div class="label" style="margin-top:6px">Billing cycle</div>
+    <div class="two">${f('cdSd','stmtDay','Statement date (day)','num inputmode="numeric" maxlength="2" placeholder="5"')}${f('cdDd','dueDay','Payment due (day)','num inputmode="numeric" maxlength="2" placeholder="25"')}</div>
+    <div class="note" style="margin:0;background:var(--accent-soft);color:var(--accent);font-weight:600" id="cdPrev">${cdPreview()}</div>
+    <div class="toggle"><span>Autopay is on<div class="hint">It still shows in your checklist so you can confirm it went through</div></span><button class="sw" role="switch" aria-checked="${!!c.autopay}" data-act="cdAuto" aria-label="Autopay"></button></div>
+    <div class="label" style="margin-top:6px">Card features</div>
+    <div class="two">${f('cdFee','fee','Annual fee (₹)','num inputmode="numeric" placeholder="999"')}<label for="cdFm">Fee charged in<input class="field" id="cdFm" data-cd="feeMonth" type="month" value="${esc(c.feeMonth)}"></label></div>
+    ${f('cdWv','waive','Annual spend that waives the fee (₹)','num inputmode="numeric" placeholder="2,00,000"')}
+    <div class="two">${f('cdFx','fx','Forex markup (%)','num inputmode="decimal" placeholder="3.5"')}${f('cdIr','rate','Interest (% per month)','num inputmode="decimal" placeholder="3.75"')}</div>
+    ${f('cdRw','rewards','Rewards','maxlength="120" autocomplete="off" placeholder="5% on online spends"')}
+    ${f('cdLg','lounge','Lounge access','maxlength="120" autocomplete="off" placeholder="4 domestic visits a year"')}
+    <label for="cdNt">Notes<textarea class="field" id="cdNt" data-cd="notes" maxlength="300" placeholder="Anything worth remembering">${esc(c.notes)}</textarea></label>
+    <button class="save" data-act="cdSave">${c._new?'Save card':'Save'}</button>
+    ${c._new?'':'<button class="pillbtn ghost sm danger" style="align-self:center" data-act="cdDel">Delete card</button>'}
+  </div>`;
+  if(sheetEl)setSheet(html);else openSheet(html);
+}
+function saveCard(){
+  const c=CD;const name=c.name.trim();
+  if(!name){toast('Give the card a name');return}
+  if([c.name,c.bank,c.rewards,c.lounge,c.notes].some(s=>/\d{12,}/.test(String(s).replace(/[\s-]/g,'')))){toast('That looks like a card number. Please remove it.');return}
+  if(c.last4&&!/^\d{4}$/.test(c.last4)){toast('Enter exactly the last 4 digits, or leave it empty');return}
+  const sd=Math.round(toNum(c.stmtDay)),dd=Math.round(toNum(c.dueDay));
+  if(!(sd>=1&&sd<=31&&dd>=1&&dd<=31)){toast('Enter the statement day and due day (1 to 31)');return}
+  const old=cardsList().find(x=>x.id===c.id);
+  const o={id:c.id,name,bank:c.bank.trim(),last4:c.last4,network:c.network,limit:toNum(c.limit),stmtDay:sd,dueDay:dd,autopay:!!c.autopay,fee:toNum(c.fee),feeMonth:c.feeMonth||'',waive:toNum(c.waive),
+    fx:c.fx===''?'':toNum(c.fx),rate:c.rate===''?'':toNum(c.rate),rewards:c.rewards.trim(),lounge:c.lounge.trim(),notes:c.notes.trim(),active:true,since:old?.since||today()};
+  if(!S.cards)S.cards=[];const i=S.cards.findIndex(x=>x.id===o.id);if(i>=0)S.cards[i]=o;else S.cards.push(o);
+  persist(true);closeSheet();render();toast(c._new?'Card added':'Card saved');
+}
+function deleteCard(){const c=CD;confirmSheet(`Delete “${esc(c.name)}”? Its paid history stays, and its bills stop appearing.`,'Delete',()=>{S.cards=cardsList().filter(x=>x.id!==c.id);persist(true);render();toast('Card deleted')})}
+// sample data only: mark older bills paid so the demo shows a mix of paid and due
+function seedSampleBills(){
+  const t=today(),hv=s=>[...s].reduce((a,c)=>a+c.charCodeAt(0),0);S.billPaid={};
+  for(let m=mkOf(billsFrom());m<=addMonths(mkOf(t),1);m=addMonths(m,1))for(const it of billItems(m)){
+    const amt=it.kind==='card'&&hv(it.key)%3?Math.round((6000+(hv(it.key)*137)%30000)/10)*10:0;
+    if(it.due<addDays(t,-3))S.billPaid[it.key]=Object.assign(amt?{amt}:{},{on:it.due});
+    else if(amt&&it.stmt<=t)S.billPaid[it.key]={amt};
+  }
 }
 
 /* ============ goal editor ============ */
@@ -1133,6 +1355,10 @@ function openSettings(){
   <div class="setsec"><div class="label">Daily budget</div>
     <div class="seg full" role="group"><button data-act="mode" data-m="fixed" aria-pressed="${S.settings.mode!=='rolling'}">Fixed</button><button data-act="mode" data-m="rolling" aria-pressed="${S.settings.mode==='rolling'}">Rolling</button></div>
     <div style="font-size:13.5px;color:var(--ink2)">${S.settings.mode==='rolling'?'<b>Rolling:</b> overspend today and tomorrow’s budget shrinks. Spend less and it grows. Planned spends are counted too.':'<b>Fixed:</b> the same amount every day, worked out as day-to-day money ÷ days in the month.'}</div>
+  </div>
+  <div class="setsec"><div class="label">Bill reminders</div>
+    <div class="seg full" role="group" aria-label="Days before due">${[2,5,7,10].map(n=>`<button data-act="billLead" data-n="${n}" aria-pressed="${billLead()===n}">${n} days</button>`).join('')}</div>
+    <div style="font-size:13.5px;color:var(--ink2)">Recurring bills show on Today this many days before they are due. Card bills show from the statement date. Both stay until you tick them paid.</div>
   </div>
   <div class="setsec"><div class="label">Categories &amp; favourites</div><div style="font-size:13.5px;color:var(--ink2)">Add your own categories and sub-categories, rename or hide ones you don’t use, change the order, and star favourites so they show up first when you add an expense.</div>
     <div class="btnrow"><button class="pillbtn sm" data-act="catMgr">Manage categories</button></div>
@@ -1289,6 +1515,19 @@ document.addEventListener('click',ev=>{
     case'editGoal':openGoal(d.id);break;
     case'goalAdd':goalAddSavings(d.id);break;
     case'mode':S.settings.mode=d.m;persist();openSettings();render();break;
+    case'billLead':S.settings.billLead=+d.n;persist();openSettings();render();break;
+    case'duesMonth':UI.dues.mk=addMonths(UI.dues.mk,+d.d);render();break;
+    case'billTick':tickBill(d.k);break;
+    case'billOpen':openBill(d.k);break;
+    case'billPay':saveBill(true);break;
+    case'billSaveAmt':saveBill(false);break;
+    case'billUnpay':unpayBill();break;
+    case'addCard':openCard();break;
+    case'editCard':openCard(d.id);break;
+    case'cdNet':CD.network=d.n;drawCard();break;
+    case'cdAuto':CD.autopay=!CD.autopay;drawCard();break;
+    case'cdSave':saveCard();break;
+    case'cdDel':deleteCard();break;
     case'exportJson':download(`kharcha-backup-${today()}.json`,backup(),'application/json');break;
     case'exportCsv':download(`kharcha-${today()}.csv`,csv(),'text/csv');break;
     case'copyJson':navigator.clipboard.writeText(backup()).then(()=>toast('Backup copied. Paste it into a note to keep it safe.'),()=>toast('Couldn’t copy here'));break;
@@ -1303,6 +1542,10 @@ document.addEventListener('change',ev=>{const el=ev.target.closest('[data-chg]')
   if(el.dataset.chg==='income'){S.incomes[mk]=v;if(mk>=mkOf(today()))S.settings.income=v}
   if(el.dataset.chg==='saving'){S.savings[mk]=v;if(mk>=mkOf(today()))S.settings.saving=v}
   persist();render()});
+document.addEventListener('input',ev=>{const el=ev.target.closest('[data-cd]');if(!el||!CD)return;
+  if(el.dataset.cd==='last4'){const c=el.value.replace(/\D/g,'').slice(0,4);if(c!==el.value)el.value=c}
+  CD[el.dataset.cd]=el.value;
+  if(el.dataset.cd==='stmtDay'||el.dataset.cd==='dueDay'){const p=$('#cdPrev');if(p)p.textContent=cdPreview()}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheetEl){closeSheet();return}if(sheetKeys)sheetKeys(e)});
 document.addEventListener('pointerover',e=>{const p=e.target.closest('#donut path');if(p)donutFocus(+p.dataset.i)});
 document.addEventListener('pointerout',e=>{if(e.target.closest('#donut path'))donutFocus(null)});
@@ -1358,7 +1601,7 @@ function gate(){
   let cloud=false;try{cloud=await tryCloud()}catch(e){console.warn('Cloud unavailable, using this device',e)}
   if(cloud)return;
   const had=loadLocal();
-  if(!had){S=sampleData()}
+  if(!had){S=sampleData();seedSampleBills()}
   render();autoSync();
   const g=$('#gate');if(g)g.remove();
 })();
